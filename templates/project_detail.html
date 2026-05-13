@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+{% block title %}{{ project.title }} — ProdTrack{% endblock %}
+
+{% block content %}
+{% set is_overdue = project.is_overdue %}
+
+<!-- Header -->
+<div style="margin-bottom:24px;">
+  <div style="margin-bottom:8px;">
+    <a href="/projects" style="font-size:0.8rem; color:#4b5563; text-decoration:none;">← Projects</a>
+  </div>
+  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+    <div>
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <span class="badge badge-{{ project.type }}">{{ project.type_label }}</span>
+        <span class="badge badge-{% if is_overdue %}overdue{% else %}{{ project.status }}{% endif %}">
+          {% if is_overdue %}Overdue{% else %}{{ project.status.title() }}{% endif %}
+        </span>
+        {% if project.needs_instagram %}
+        <span style="font-size:0.65rem; background:#1a0a2e; color:#c084fc; padding:2px 8px; border-radius:9999px; border:1px solid #7c3aed; font-weight:600;">IG + YT</span>
+        {% endif %}
+      </div>
+      <h1 style="font-size:1.4rem; font-weight:700; color:#f9fafb; margin-bottom:4px;">{{ project.title }}</h1>
+      {% if project.notes %}
+      <div style="font-size:0.85rem; color:#6b7280;">{{ project.notes }}</div>
+      {% endif %}
+    </div>
+    <form method="post" action="/projects/{{ project.id }}/delete" onsubmit="return confirm('Permanently delete this project?')">
+      <button type="submit" class="btn-danger">Delete Project</button>
+    </form>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+
+  <!-- Timeline Card -->
+  <div class="card" style="padding:18px;">
+    <div class="section-title">Timeline</div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.8rem; color:#6b7280;">Filmed</span>
+        <span style="font-size:0.85rem; color:#f9fafb; font-weight:500;">
+          {% if project.filmed_date %}{{ project.filmed_date.strftime('%d %b %Y') }}{% else %}<span style="color:#4b5563;">Not set</span>{% endif %}
+        </span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.8rem; color:#6b7280;">Deadline</span>
+        <span style="font-size:0.85rem; font-weight:600; color:{% if is_overdue %}#fca5a5{% elif project.days_until_deadline is not none and project.days_until_deadline <= 2 %}#fbbf24{% else %}#f9fafb{% endif %};">
+          {% if project.deadline %}
+            {{ project.deadline.strftime('%d %b %Y') }}
+            {% if project.status != 'complete' %}
+              {% if is_overdue %}({{ (-project.days_until_deadline) }}d overdue)
+              {% elif project.days_until_deadline == 0 %}(today)
+              {% elif project.days_until_deadline == 1 %}(tomorrow)
+              {% else %}({{ project.days_until_deadline }}d left){% endif %}
+            {% endif %}
+          {% else %}<span style="color:#4b5563;">Not set</span>{% endif %}
+        </span>
+      </div>
+      {% if project.status == 'complete' %}
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.8rem; color:#6b7280;">Completed</span>
+        <span style="font-size:0.85rem; color:#86efac; font-weight:500;">{{ project.completed_at.strftime('%d %b %Y') if project.completed_at }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.8rem; color:#6b7280;">Days to Complete</span>
+        <span style="font-size:0.85rem; font-weight:600; color:{% if project.met_deadline %}#86efac{% else %}#fca5a5{% endif %};">
+          {{ project.days_to_complete if project.days_to_complete is not none else '—' }}d
+          {% if project.met_deadline %}✓{% else %}✗{% endif %}
+        </span>
+      </div>
+      {% endif %}
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.8rem; color:#6b7280;">Total Edit Time</span>
+        <span style="font-size:0.85rem; color:#f9fafb; font-weight:500;">
+          {% if project.total_edit_hours > 0 %}{{ project.total_edit_hours }}h{% else %}<span style="color:#4b5563;">None logged</span>{% endif %}
+        </span>
+      </div>
+      {% if project.work_day %}
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.8rem; color:#6b7280;">Work Day</span>
+        <a href="/workdays" style="font-size:0.85rem; color:#818cf8; text-decoration:none;">{{ project.work_day.date.strftime('%d %b %Y') }}</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Links Card -->
+  <div class="card" style="padding:18px;">
+    <div class="section-title">Published Links</div>
+    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
+      <div>
+        <div style="font-size:0.7rem; color:#4b5563; margin-bottom:3px;">YouTube</div>
+        {% if project.youtube_url %}
+        <a href="{{ project.youtube_url }}" target="_blank" style="font-size:0.8rem; color:#818cf8; word-break:break-all;">{{ project.youtube_url }}</a>
+        {% else %}
+        <span style="font-size:0.8rem; color:#374151;">Not submitted</span>
+        {% endif %}
+      </div>
+      {% if project.needs_instagram %}
+      <div>
+        <div style="font-size:0.7rem; color:#4b5563; margin-bottom:3px;">Instagram</div>
+        {% if project.instagram_url %}
+        <a href="{{ project.instagram_url }}" target="_blank" style="font-size:0.8rem; color:#c084fc; word-break:break-all;">{{ project.instagram_url }}</a>
+        {% else %}
+        <span style="font-size:0.8rem; color:#374151;">Not submitted</span>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    {% if project.status != 'complete' %}
+    <div style="border-top:1px solid #1f2937; padding-top:12px;">
+      <div style="font-size:0.7rem; font-weight:700; color:#4b5563; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">Mark as Complete</div>
+      <form method="post" action="/projects/{{ project.id }}/complete">
+        <div style="margin-bottom:8px;">
+          <label>YouTube URL {% if not project.needs_instagram %}*{% endif %}</label>
+          <input type="url" name="youtube_url" placeholder="https://youtube.com/..." value="{{ project.youtube_url or '' }}">
+        </div>
+        {% if project.needs_instagram %}
+        <div style="margin-bottom:10px;">
+          <label>Instagram URL *</label>
+          <input type="url" name="instagram_url" placeholder="https://instagram.com/reel/..." value="{{ project.instagram_url or '' }}">
+        </div>
+        {% endif %}
+        <button type="submit" class="btn-primary" style="width:100%; background:#166534; font-size:0.8rem;"
+                onclick="return confirm('Mark this project as complete?')">
+          ✓ Mark Complete
+        </button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Status Actions Row -->
+{% if project.status != 'complete' %}
+<div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+  {% if project.status == 'filmed' %}
+  <form method="post" action="/projects/{{ project.id }}/start-editing">
+    <button type="submit" class="btn-ghost" style="background:#451a03; color:#fbbf24; border:1px solid #78350f;">▶ Start Editing</button>
+  </form>
+  {% endif %}
+
+  <button class="btn-ghost" onclick="document.getElementById('delay-form').style.display = document.getElementById('delay-form').style.display === 'none' ? 'block' : 'none'">
+    ⚑ Log Delay
+  </button>
+  <button class="btn-ghost" onclick="document.getElementById('edit-form').style.display = document.getElementById('edit-form').style.display === 'none' ? 'block' : 'none'">
+    ⏱ Log Edit Session
+  </button>
+  <button class="btn-ghost" onclick="document.getElementById('update-form').style.display = document.getElementById('update-form').style.display === 'none' ? 'block' : 'none'">
+    ✎ Edit Details
+  </button>
+</div>
+
+<!-- Delay Form (hidden) -->
+<div id="delay-form" style="display:none; margin-bottom:16px;">
+  <div class="card" style="padding:16px; border-color:#78350f;">
+    <div class="section-title" style="color:#f59e0b;">Log Delay Reason</div>
+    <form method="post" action="/projects/{{ project.id }}/log-delay" style="display:flex; gap:8px;">
+      <input type="text" name="delay_reason" placeholder="Reason for delay..." required style="flex:1;">
+      <button type="submit" class="btn-primary" style="background:#92400e; white-space:nowrap;">Save</button>
+    </form>
+    {% if project.delay_reason %}
+    <div style="margin-top:10px; font-size:0.75rem; color:#f59e0b; white-space:pre-line; background:#1c1000; padding:8px 10px; border-radius:6px;">{{ project.delay_reason }}</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Edit Session Form (hidden) -->
+<div id="edit-form" style="display:none; margin-bottom:16px;">
+  <div class="card" style="padding:16px; border-color:#374151;">
+    <div class="section-title">Log Edit Session</div>
+    <form method="post" action="/projects/{{ project.id }}/edit-sessions">
+      <div style="display:grid; grid-template-columns:1fr 1fr 2fr auto; gap:8px; align-items:end;">
+        <div>
+          <label>Date</label>
+          <input type="date" name="session_date" value="{{ today.isoformat() }}" required>
+        </div>
+        <div>
+          <label>Duration (minutes)</label>
+          <input type="number" name="duration_minutes" placeholder="e.g. 90" min="1" max="1440" required>
+        </div>
+        <div>
+          <label>Notes</label>
+          <input type="text" name="notes" placeholder="What did you work on?">
+        </div>
+        <button type="submit" class="btn-primary">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Update Form (hidden) -->
+<div id="update-form" style="display:none; margin-bottom:16px;">
+  <div class="card" style="padding:16px; border-color:#374151;">
+    <div class="section-title">Edit Project Details</div>
+    <form method="post" action="/projects/{{ project.id }}/update">
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+        <div>
+          <label>Title</label>
+          <input type="text" name="title" value="{{ project.title }}">
+        </div>
+        <div>
+          <label>Filmed Date</label>
+          <input type="date" name="filmed_date" value="{{ project.filmed_date.isoformat() if project.filmed_date else '' }}">
+        </div>
+        <div>
+          <label>Deadline</label>
+          <input type="date" name="deadline" value="{{ project.deadline.isoformat() if project.deadline else '' }}">
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label>Notes</label>
+        <textarea name="notes" rows="2">{{ project.notes or '' }}</textarea>
+      </div>
+      <button type="submit" class="btn-primary">Save Changes</button>
+    </form>
+  </div>
+</div>
+{% else %}
+<!-- Complete project — show edit/engage buttons -->
+<div style="display:flex; gap:10px; margin-bottom:20px;">
+  <button class="btn-ghost" onclick="document.getElementById('engage-form').style.display = document.getElementById('engage-form').style.display === 'none' ? 'block' : 'none'">
+    📈 Log Engagement
+  </button>
+  <button class="btn-ghost" onclick="document.getElementById('edit-form').style.display = document.getElementById('edit-form').style.display === 'none' ? 'block' : 'none'">
+    ⏱ Log Edit Session
+  </button>
+</div>
+
+<!-- Edit Session Form for completed (hidden) -->
+<div id="edit-form" style="display:none; margin-bottom:16px;">
+  <div class="card" style="padding:16px;">
+    <div class="section-title">Log Edit Session</div>
+    <form method="post" action="/projects/{{ project.id }}/edit-sessions">
+      <div style="display:grid; grid-template-columns:1fr 1fr 2fr auto; gap:8px; align-items:end;">
+        <div><label>Date</label><input type="date" name="session_date" value="{{ today.isoformat() }}" required></div>
+        <div><label>Duration (min)</label><input type="number" name="duration_minutes" placeholder="90" min="1" required></div>
+        <div><label>Notes</label><input type="text" name="notes" placeholder="What did you work on?"></div>
+        <button type="submit" class="btn-primary">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Engagement Form (hidden) -->
+<div id="engage-form" style="display:none; margin-bottom:16px;">
+  <div class="card" style="padding:16px; border-color:#1d4ed8;">
+    <div class="section-title" style="color:#60a5fa;">Log Engagement Metrics</div>
+    <form method="post" action="/projects/{{ project.id }}/engagement">
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr auto; gap:8px; align-items:end;">
+        <div>
+          <label>Platform</label>
+          <select name="platform" required>
+            <option value="youtube">YouTube</option>
+            {% if project.needs_instagram %}<option value="instagram">Instagram</option>{% endif %}
+          </select>
+        </div>
+        <div>
+          <label>Check Period</label>
+          <select name="check_period" required>
+            <option value="7">7 Days</option>
+            <option value="30">30 Days</option>
+          </select>
+        </div>
+        <div><label>Views</label><input type="number" name="views" placeholder="0" min="0" value="0"></div>
+        <div><label>Likes</label><input type="number" name="likes" placeholder="0" min="0" value="0"></div>
+        <div><label>Comments</label><input type="number" name="comments" placeholder="0" min="0" value="0"></div>
+        <div><label>Shares/Reposts</label><input type="number" name="shares" placeholder="0" min="0" value="0"></div>
+        <button type="submit" class="btn-primary">Log</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- Delay history (if any, shown always) -->
+{% if project.delay_reason and project.status == 'complete' %}
+<div class="card" style="padding:14px; margin-bottom:16px; border-color:#78350f;">
+  <div class="section-title" style="color:#f59e0b;">Delay History</div>
+  <div style="font-size:0.8rem; color:#fbbf24; white-space:pre-line;">{{ project.delay_reason }}</div>
+</div>
+{% endif %}
+
+<!-- Edit Sessions -->
+<div class="card" style="padding:18px; margin-bottom:16px;">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+    <div class="section-title" style="margin-bottom:0;">Edit Sessions</div>
+    {% if project.edit_sessions %}
+    <div style="font-size:0.8rem; color:#6b7280;">Total: <strong style="color:#f9fafb;">{{ project.total_edit_hours }}h</strong></div>
+    {% endif %}
+  </div>
+  {% if project.edit_sessions %}
+  <div style="display:flex; flex-direction:column; gap:6px;">
+    {% for s in project.edit_sessions %}
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; background:#0d1117; border-radius:6px; border:1px solid #1f2937;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:0.8rem; color:#9ca3af;">{{ s.date.strftime('%d %b %Y') }}</span>
+        <span style="font-size:0.85rem; font-weight:600; color:#f9fafb;">{{ s.duration_display }}</span>
+        {% if s.notes %}
+        <span style="font-size:0.75rem; color:#6b7280;">{{ s.notes }}</span>
+        {% endif %}
+      </div>
+      <form method="post" action="/edit-sessions/{{ s.id }}/delete" onsubmit="return confirm('Delete this session?')">
+        <button type="submit" class="btn-danger" style="padding:3px 8px; font-size:0.65rem;">×</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="font-size:0.8rem; color:#374151; text-align:center; padding:16px 0;">No edit sessions logged yet.</div>
+  {% endif %}
+</div>
+
+<!-- Engagement Logs -->
+<div class="card" style="padding:18px;">
+  <div class="section-title">Engagement Logs</div>
+  {% if project.engagement_logs %}
+  <div style="display:flex; flex-direction:column; gap:6px;">
+    {% for e in project.engagement_logs %}
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:#0d1117; border-radius:8px; border:1px solid #1f2937;">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <span style="font-size:0.75rem; font-weight:600; color:{% if e.platform == 'youtube' %}#f87171{% else %}#c084fc{% endif %};">
+          {% if e.platform == 'youtube' %}▶ YouTube{% else %}◈ Instagram{% endif %}
+        </span>
+        <span style="font-size:0.75rem; color:#4b5563;">{{ e.check_period }}d check</span>
+        <span class="badge badge-{{ e.score }}">{{ e.score_label }}</span>
+        <span style="font-size:0.8rem; color:#9ca3af;">{{ '{:,}'.format(e.views) }} views</span>
+        <span style="font-size:0.75rem; color:#4b5563;">{{ '{:,}'.format(e.likes) }} likes</span>
+        <span style="font-size:0.75rem; color:#4b5563;">{{ '{:,}'.format(e.comments) }} comments</span>
+        {% if e.shares %}<span style="font-size:0.75rem; color:#4b5563;">{{ '{:,}'.format(e.shares) }} shares</span>{% endif %}
+        <span style="font-size:0.7rem; color:#374151;">{{ e.logged_at.strftime('%d %b') }}</span>
+      </div>
+      <form method="post" action="/engagement/{{ e.id }}/delete" onsubmit="return confirm('Delete this log?')">
+        <button type="submit" class="btn-danger" style="padding:3px 8px; font-size:0.65rem;">×</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="font-size:0.8rem; color:#374151; text-align:center; padding:16px 0;">
+    No engagement data yet.
+    {% if project.status == 'complete' %}Log it after 7 or 30 days using the button above.{% else %}Available once project is complete.{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Keep forms open if they have content after a redirect with msg
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('msg') && params.get('msg').includes('session')) {
+    const f = document.getElementById('edit-form');
+    if (f) f.style.display = 'block';
+  }
+</script>
+{% endblock %}

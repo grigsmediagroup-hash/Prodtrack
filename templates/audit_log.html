@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Audit Log — ProdTrack{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+  <div>
+    <h1 style="font-size:1.5rem; font-weight:700; color:#f9fafb;">Audit Log</h1>
+    <div style="font-size:0.85rem; color:#6b7280; margin-top:2px;">{{ total }} total entries — every action by every user</div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; align-items:center;">
+  <a href="/audit" style="text-decoration:none;">
+    <button class="btn-ghost" style="{% if not filter_entity and not filter_user %}background:#312e81; color:#c7d2fe;{% endif %}">All</button>
+  </a>
+
+  <div style="width:1px; background:#1f2937; height:24px;"></div>
+
+  <a href="/audit?entity_type=project" style="text-decoration:none;">
+    <button class="btn-ghost" style="{% if filter_entity == 'project' %}background:#2d1b69; color:#c4b5fd;{% endif %}">Projects</button>
+  </a>
+  <a href="/audit?entity_type=workday" style="text-decoration:none;">
+    <button class="btn-ghost" style="{% if filter_entity == 'workday' %}background:#0c4a6e; color:#7dd3fc;{% endif %}">Work Days</button>
+  </a>
+  <a href="/audit?entity_type=edit_session" style="text-decoration:none;">
+    <button class="btn-ghost" style="{% if filter_entity == 'edit_session' %}background:#451a03; color:#fbbf24;{% endif %}">Edit Sessions</button>
+  </a>
+  <a href="/audit?entity_type=engagement" style="text-decoration:none;">
+    <button class="btn-ghost" style="{% if filter_entity == 'engagement' %}background:#14532d; color:#86efac;{% endif %}">Engagement</button>
+  </a>
+
+  {% if all_users %}
+  <div style="width:1px; background:#1f2937; height:24px;"></div>
+  {% for u in all_users %}
+  <a href="/audit?performed_by={{ u }}" style="text-decoration:none;">
+    <button class="btn-ghost" style="{% if filter_user == u %}background:#1e3a5f; color:#93c5fd;{% endif %}">👤 {{ u }}</button>
+  </a>
+  {% endfor %}
+  {% endif %}
+</div>
+
+<!-- Log Table -->
+{% if entries %}
+<div class="card" style="overflow:hidden;">
+  <table style="width:100%; border-collapse:collapse;">
+    <thead>
+      <tr style="border-bottom:1px solid #1f2937;">
+        <th style="padding:10px 16px; text-align:left; font-size:0.65rem; font-weight:700; color:#4b5563; letter-spacing:0.1em; text-transform:uppercase; white-space:nowrap;">When</th>
+        <th style="padding:10px 16px; text-align:left; font-size:0.65rem; font-weight:700; color:#4b5563; letter-spacing:0.1em; text-transform:uppercase;">Who</th>
+        <th style="padding:10px 16px; text-align:left; font-size:0.65rem; font-weight:700; color:#4b5563; letter-spacing:0.1em; text-transform:uppercase;">Action</th>
+        <th style="padding:10px 16px; text-align:left; font-size:0.65rem; font-weight:700; color:#4b5563; letter-spacing:0.1em; text-transform:uppercase;">Subject</th>
+        <th style="padding:10px 16px; text-align:left; font-size:0.65rem; font-weight:700; color:#4b5563; letter-spacing:0.1em; text-transform:uppercase;">Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in entries %}
+      {% set action_color = {
+        'created':            '#86efac',
+        'completed':          '#a78bfa',
+        'updated':            '#93c5fd',
+        'deleted':            '#fca5a5',
+        'started_editing':    '#fbbf24',
+        'delay_logged':       '#fb923c',
+        'edit_session_logged':'#fbbf24',
+        'engagement_logged':  '#6ee7b7',
+      }.get(e.action, '#6b7280') %}
+      {% set entity_icon = {
+        'project':      '🎥',
+        'workday':      '📅',
+        'edit_session': '⏱',
+        'engagement':   '📈',
+      }.get(e.entity_type, '•') %}
+      <tr style="border-bottom:1px solid #1f2937; transition:background 0.1s;" onmouseover="this.style.background='#0d1117'" onmouseout="this.style.background='transparent'">
+        <td style="padding:10px 16px; white-space:nowrap;">
+          <div style="font-size:0.8rem; color:#9ca3af;">{{ e.timestamp.strftime('%d %b %Y') }}</div>
+          <div style="font-size:0.7rem; color:#4b5563;">{{ e.timestamp.strftime('%H:%M') }}</div>
+        </td>
+        <td style="padding:10px 16px;">
+          <div style="font-size:0.82rem; font-weight:600; color:#c7d2fe;">{{ e.performed_by }}</div>
+        </td>
+        <td style="padding:10px 16px; white-space:nowrap;">
+          <span style="font-size:0.72rem; font-weight:700; color:{{ action_color }}; background:{{ action_color }}18; padding:3px 8px; border-radius:9999px;">
+            {{ e.action.replace('_', ' ').title() }}
+          </span>
+        </td>
+        <td style="padding:10px 16px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:0.85rem;">{{ entity_icon }}</span>
+            <div>
+              <div style="font-size:0.82rem; color:#f9fafb; font-weight:500;">{{ e.entity_title or '—' }}</div>
+              <div style="font-size:0.7rem; color:#4b5563; text-transform:capitalize;">{{ e.entity_type.replace('_', ' ') }}</div>
+            </div>
+          </div>
+        </td>
+        <td style="padding:10px 16px; max-width:280px;">
+          <div style="font-size:0.78rem; color:#6b7280; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ e.details or '' }}">
+            {{ e.details or '—' }}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:20px;">
+  {% if page > 1 %}
+  <a href="/audit?page={{ page - 1 }}{% if filter_entity %}&entity_type={{ filter_entity }}{% endif %}{% if filter_user %}&performed_by={{ filter_user }}{% endif %}" style="text-decoration:none;">
+    <button class="btn-ghost">← Prev</button>
+  </a>
+  {% endif %}
+  <span style="font-size:0.8rem; color:#6b7280;">Page {{ page }} of {{ total_pages }}</span>
+  {% if page < total_pages %}
+  <a href="/audit?page={{ page + 1 }}{% if filter_entity %}&entity_type={{ filter_entity }}{% endif %}{% if filter_user %}&performed_by={{ filter_user }}{% endif %}" style="text-decoration:none;">
+    <button class="btn-ghost">Next →</button>
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="card" style="padding:48px; text-align:center;">
+  <div style="font-size:2rem; margin-bottom:10px;">📋</div>
+  <div style="font-size:0.9rem; color:#6b7280;">No audit entries yet.</div>
+  {% if filter_entity or filter_user %}
+  <a href="/audit" style="text-decoration:none; display:inline-block; margin-top:12px;"><button class="btn-ghost">Clear filters</button></a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

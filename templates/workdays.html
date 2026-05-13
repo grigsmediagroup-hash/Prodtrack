@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Work Days — ProdTrack{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;">
+  <div>
+    <h1 style="font-size:1.5rem; font-weight:700; color:#f9fafb;">Work Days</h1>
+    <div style="font-size:0.85rem; color:#6b7280; margin-top:2px;">Log filming sessions and link projects</div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1.6fr; gap:20px; align-items:start;">
+
+  <!-- Log Work Day Form -->
+  <div class="card" style="padding:20px;">
+    <div class="section-title">{% if today_logged %}Today Already Logged{% else %}Log Today's Work{% endif %}</div>
+
+    {% if today_logged %}
+    <div style="background:#14532d22; border:1px solid #166534; border-radius:8px; padding:12px; margin-bottom:16px;">
+      <div style="font-size:0.8rem; color:#86efac; font-weight:600;">✓ Clocked in — {{ today.strftime('%A %d %b') }}</div>
+      {% if today_logged.notes %}
+      <div style="font-size:0.75rem; color:#6b7280; margin-top:4px;">{{ today_logged.notes }}</div>
+      {% endif %}
+      <div style="font-size:0.75rem; color:#4b5563; margin-top:6px;">{{ today_logged.projects | length }} project(s) linked</div>
+    </div>
+    {% endif %}
+
+    <form method="post" action="/workdays/log">
+      <div style="margin-bottom:14px;">
+        <label>Date</label>
+        <input type="date" name="workday_date" value="{{ today.isoformat() }}" required>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label>Notes (optional)</label>
+        <textarea name="notes" rows="2" placeholder="What was filmed today..."></textarea>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label>Projects Filmed Today</label>
+        {% if all_projects %}
+        <div style="max-height:200px; overflow-y:auto; border:1px solid #374151; border-radius:8px; padding:8px; background:#1f2937;">
+          {% for p in all_projects %}
+          {% if p.status != 'complete' %}
+          <label style="display:flex; align-items:center; gap:8px; padding:6px 4px; cursor:pointer; text-transform:none; letter-spacing:0; font-size:0.8rem; font-weight:400; color:#d1d5db;">
+            <input type="checkbox" name="project_ids" value="{{ p.id }}" style="width:auto; background:#374151;" {% if p.work_day_id and p.filmed_date == today %}checked{% endif %}>
+            <span class="badge badge-{{ p.type }}" style="font-size:0.6rem;">{{ p.type_label }}</span>
+            {{ p.title }}
+          </label>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="font-size:0.8rem; color:#4b5563; padding:8px;">No projects yet. <a href="/projects" style="color:#818cf8;">Create one →</a></div>
+        {% endif %}
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">
+        {% if today_logged %}Update Today's Log{% else %}Clock In{% endif %}
+      </button>
+    </form>
+  </div>
+
+  <!-- Work Day History -->
+  <div>
+    <div class="section-title">History</div>
+    {% if workdays %}
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      {% for wd in workdays %}
+      <div class="card" style="padding:16px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between;">
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+              <div style="font-size:0.9rem; font-weight:600; color:#f9fafb;">{{ wd.date.strftime('%A, %d %B %Y') }}</div>
+              {% if wd.date == today %}
+              <span style="font-size:0.65rem; background:#312e81; color:#c7d2fe; padding:2px 8px; border-radius:9999px; font-weight:700;">TODAY</span>
+              {% endif %}
+            </div>
+            {% if wd.notes %}
+            <div style="font-size:0.8rem; color:#6b7280; margin-bottom:8px;">{{ wd.notes }}</div>
+            {% endif %}
+            {% if wd.projects %}
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+              {% for p in wd.projects %}
+              <a href="/projects/{{ p.id }}" style="text-decoration:none;">
+                <div style="background:#1f2937; border:1px solid #374151; border-radius:6px; padding:4px 10px; font-size:0.75rem; color:#d1d5db; display:flex; align-items:center; gap:6px;">
+                  <span class="badge badge-{{ p.type }}" style="font-size:0.55rem;">{{ p.type_label }}</span>
+                  {{ p.title }}
+                  <span class="badge badge-{{ p.display_status }}" style="font-size:0.55rem;">{{ p.display_status.title() }}</span>
+                </div>
+              </a>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div style="font-size:0.75rem; color:#4b5563;">No projects linked</div>
+            {% endif %}
+          </div>
+          <form method="post" action="/workdays/{{ wd.id }}/delete" onsubmit="return confirm('Delete this work day log?')">
+            <button type="submit" class="btn-danger" style="margin-left:12px;">Delete</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="padding:40px; text-align:center;">
+      <div style="font-size:1.5rem; margin-bottom:8px;">📅</div>
+      <div style="font-size:0.85rem; color:#6b7280;">No work days logged yet.</div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

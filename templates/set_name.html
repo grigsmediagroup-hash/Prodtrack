@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Who are you? — ProdTrack</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    input { background:#1f2937; border:1px solid #374151; color:#f9fafb; border-radius:8px; padding:10px 14px; font-size:1rem; width:100%; outline:none; transition:border-color 0.15s; }
+    input:focus { border-color:#4f46e5; }
+  </style>
+</head>
+<body style="background:#030712; color:#f9fafb; font-family:system-ui,-apple-system,sans-serif; min-height:100vh; display:flex; align-items:center; justify-content:center;">
+  <div style="width:100%; max-width:380px; padding:24px;">
+    <div style="text-align:center; margin-bottom:32px;">
+      <div style="font-size:2.5rem; margin-bottom:12px;">🎬</div>
+      <h1 style="font-size:1.5rem; font-weight:700; color:#f9fafb; margin-bottom:4px;">ProdTrack</h1>
+      <p style="font-size:0.85rem; color:#6b7280;">Production Pipeline Tracker</p>
+    </div>
+
+    <div style="background:#111827; border:1px solid #1f2937; border-radius:14px; padding:28px;">
+      <h2 style="font-size:1rem; font-weight:600; color:#f9fafb; margin-bottom:6px;">Who are you?</h2>
+      <p style="font-size:0.8rem; color:#6b7280; margin-bottom:20px;">Your name is shown in the audit log so all activity can be traced.</p>
+
+      <form method="post" action="/set-name-post">
+        <div style="margin-bottom:16px;">
+          <label style="font-size:0.7rem; font-weight:700; color:#6b7280; letter-spacing:0.05em; text-transform:uppercase; display:block; margin-bottom:6px;">Your Name</label>
+          <input type="text" name="name" placeholder="e.g. Alex" required autofocus maxlength="80">
+        </div>
+        <button type="submit" style="width:100%; background:#4f46e5; color:white; padding:10px; border-radius:8px; font-size:0.9rem; font-weight:600; cursor:pointer; border:none; transition:background 0.15s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+          Enter →
+        </button>
+      </form>
+    </div>
+
+    <p style="text-align:center; font-size:0.7rem; color:#374151; margin-top:16px;">
+      This is stored as a browser cookie. No password required.
+    </p>
+  </div>
+</body>
+</html>

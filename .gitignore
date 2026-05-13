@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+tracker.db
+.env
+*.egg-info/
+dist/

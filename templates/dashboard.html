@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — ProdTrack{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;">
+  <div>
+    <h1 style="font-size:1.5rem; font-weight:700; color:#f9fafb;">Dashboard</h1>
+    <div style="font-size:0.85rem; color:#6b7280; margin-top:2px;">{{ today.strftime('%A, %d %B %Y') }}</div>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <a href="/workdays" style="text-decoration:none;">
+      <button class="btn-ghost">📅 Log Work Day</button>
+    </a>
+    <a href="/projects" style="text-decoration:none;">
+      <button class="btn-primary">+ New Project</button>
+    </a>
+  </div>
+</div>
+
+<!-- Stats Row -->
+<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:28px;">
+  <div class="card" style="padding:16px;">
+    <div style="font-size:0.65rem; font-weight:700; color:#4b5563; letter-spacing:0.1em; text-transform:uppercase;">Total Projects</div>
+    <div style="font-size:2rem; font-weight:700; color:#f9fafb; margin-top:4px;">{{ stats.total }}</div>
+  </div>
+  <div class="card" style="padding:16px;">
+    <div style="font-size:0.65rem; font-weight:700; color:#4b5563; letter-spacing:0.1em; text-transform:uppercase;">Active</div>
+    <div style="font-size:2rem; font-weight:700; color:#fbbf24; margin-top:4px;">{{ stats.active }}</div>
+  </div>
+  <div class="card" style="padding:16px;">
+    <div style="font-size:0.65rem; font-weight:700; color:#4b5563; letter-spacing:0.1em; text-transform:uppercase;">Completed</div>
+    <div style="font-size:2rem; font-weight:700; color:#86efac; margin-top:4px;">{{ stats.completed }}</div>
+  </div>
+  <div class="card" style="padding:16px;">
+    <div style="font-size:0.65rem; font-weight:700; color:#4b5563; letter-spacing:0.1em; text-transform:uppercase;">On-Time Rate</div>
+    <div style="font-size:2rem; font-weight:700; color:{% if stats.on_time_pct >= 75 %}#86efac{% elif stats.on_time_pct >= 50 %}#fbbf24{% else %}#fca5a5{% endif %}; margin-top:4px;">{{ stats.on_time_pct }}%</div>
+  </div>
+</div>
+
+<!-- Today's Work Status -->
+<div class="card" style="padding:16px; margin-bottom:24px; display:flex; align-items:center; justify-content:space-between;">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <div style="width:10px; height:10px; border-radius:50%; background:{% if today_workday %}#22c55e{% else %}#ef4444{% endif %}; box-shadow:0 0 8px {% if today_workday %}#22c55e{% else %}#ef4444{% endif %};"></div>
+    <div>
+      <div style="font-size:0.85rem; font-weight:600; color:#f9fafb;">
+        {% if today_workday %}Clocked in today{% else %}Not clocked in today{% endif %}
+      </div>
+      {% if today_workday and today_workday.notes %}
+      <div style="font-size:0.75rem; color:#6b7280; margin-top:2px;">{{ today_workday.notes }}</div>
+      {% endif %}
+    </div>
+  </div>
+  {% if not today_workday %}
+  <a href="/workdays" style="text-decoration:none;"><button class="btn-primary" style="font-size:0.75rem;">Clock In →</button></a>
+  {% else %}
+  <div style="font-size:0.75rem; color:#4b5563;">{{ today_workday.projects | length }} project(s) filmed today</div>
+  {% endif %}
+</div>
+
+<!-- Overdue -->
+{% if overdue %}
+<div style="margin-bottom:24px;">
+  <div class="section-title" style="color:#ef4444;">⚠ Overdue — {{ overdue|length }} project(s)</div>
+  <div style="display:flex; flex-direction:column; gap:8px;">
+    {% for p in overdue %}
+    <a href="/projects/{{ p.id }}" style="text-decoration:none;">
+      <div style="background:#1a0808; border:1px solid #7f1d1d; border-radius:10px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; transition:border-color 0.15s;" onmouseover="this.style.borderColor='#dc2626'" onmouseout="this.style.borderColor='#7f1d1d'">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="badge badge-{{ p.type }}">{{ p.type_label }}</span>
+          <span style="font-size:0.9rem; font-weight:600; color:#f9fafb;">{{ p.title }}</span>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:0.75rem; color:#fca5a5; font-weight:600;">{{ (-p.days_until_deadline) }} day(s) overdue</div>
+          <div style="font-size:0.7rem; color:#6b7280; margin-top:2px;">Due {{ p.deadline.strftime('%d %b') }}</div>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Due Soon -->
+{% if due_soon %}
+<div style="margin-bottom:24px;">
+  <div class="section-title" style="color:#f59e0b;">⏰ Due Soon — {{ due_soon|length }} project(s)</div>
+  <div style="display:flex; flex-direction:column; gap:8px;">
+    {% for p in due_soon %}
+    <a href="/projects/{{ p.id }}" style="text-decoration:none;">
+      <div style="background:#1c1000; border:1px solid #78350f; border-radius:10px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; transition:border-color 0.15s;" onmouseover="this.style.borderColor='#d97706'" onmouseout="this.style.borderColor='#78350f'">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="badge badge-{{ p.type }}">{{ p.type_label }}</span>
+          <span class="badge badge-{{ p.status }}">{{ p.status.title() }}</span>
+          <span style="font-size:0.9rem; font-weight:600; color:#f9fafb;">{{ p.title }}</span>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:0.75rem; color:#fbbf24; font-weight:600;">
+            {% if p.days_until_deadline == 0 %}Due today{% elif p.days_until_deadline == 1 %}Due tomorrow{% else %}{{ p.days_until_deadline }} days left{% endif %}
+          </div>
+          <div style="font-size:0.7rem; color:#6b7280; margin-top:2px;">{{ p.deadline.strftime('%d %b') }}</div>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- On Track -->
+{% if on_track %}
+<div style="margin-bottom:24px;">
+  <div class="section-title">Active Projects — {{ on_track|length }}</div>
+  <div style="display:flex; flex-direction:column; gap:8px;">
+    {% for p in on_track %}
+    <a href="/projects/{{ p.id }}" style="text-decoration:none;">
+      <div class="card" style="padding:14px 16px; display:flex; align-items:center; justify-content:space-between; transition:border-color 0.15s;" onmouseover="this.style.borderColor='#374151'" onmouseout="this.style.borderColor='#1f2937'">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="badge badge-{{ p.type }}">{{ p.type_label }}</span>
+          <span class="badge badge-{{ p.status }}">{{ p.status.title() }}</span>
+          <span style="font-size:0.9rem; font-weight:600; color:#f9fafb;">{{ p.title }}</span>
+        </div>
+        <div style="text-align:right;">
+          {% if p.deadline %}
+          <div style="font-size:0.75rem; color:#6b7280;">{{ p.days_until_deadline }} days left</div>
+          <div style="font-size:0.7rem; color:#4b5563; margin-top:2px;">Due {{ p.deadline.strftime('%d %b') }}</div>
+          {% else %}
+          <div style="font-size:0.75rem; color:#4b5563;">No deadline set</div>
+          {% endif %}
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if not overdue and not due_soon and not on_track %}
+<div class="card" style="padding:40px; text-align:center; margin-bottom:24px;">
+  <div style="font-size:2rem; margin-bottom:8px;">🎉</div>
+  <div style="font-size:0.9rem; color:#6b7280;">No active projects. Add one to get started.</div>
+  <a href="/projects" style="text-decoration:none; display:inline-block; margin-top:16px;"><button class="btn-primary">+ New Project</button></a>
+</div>
+{% endif %}
+
+<!-- Recent Completions -->
+{% if recent %}
+<div>
+  <div class="section-title">Recent Completions</div>
+  <div style="display:flex; flex-direction:column; gap:6px;">
+    {% for p in recent %}
+    <a href="/projects/{{ p.id }}" style="text-decoration:none;">
+      <div style="background:#0d1117; border:1px solid #1f2937; border-radius:8px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="badge badge-{{ p.type }}">{{ p.type_label }}</span>
+          <span style="font-size:0.85rem; color:#d1d5db;">{{ p.title }}</span>
+          {% if p.met_deadline %}
+          <span style="font-size:0.65rem; color:#86efac;">✓ on time</span>
+          {% else %}
+          <span style="font-size:0.65rem; color:#fca5a5;">✗ late</span>
+          {% endif %}
+        </div>
+        <div style="font-size:0.7rem; color:#4b5563;">
+          {{ p.completed_at.strftime('%d %b %Y') if p.completed_at else '' }}
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
